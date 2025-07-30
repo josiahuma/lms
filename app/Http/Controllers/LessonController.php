@@ -8,20 +8,30 @@ use Illuminate\Http\Request;
 
 class LessonController extends Controller
 {
+    public function create(Course $course)
+    {
+        return view('lessons.create', compact('course'));
+    }
+
     public function store(Request $request, Course $course)
     {
         if (auth()->user()->role !== 'instructor') {
             abort(403, 'Only instructors can add lessons.');
         }
 
-        $data = $request->validate([
-            'title' => 'required',
-            'content' => 'nullable',
+            $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'nullable|string',
+            'video_url' => 'nullable|url',
         ]);
 
-        $course->lessons()->create($data);
+        $course->lessons()->create([
+            'title' => $request->title,
+            'content' => $request->content,
+            'video_url' => $request->video_url,
+        ]);
 
-        return redirect()->route('courses.show', $course)->with('success', 'Lesson added!');
+        return redirect()->route('courses.show', $course)->with('success', 'Lesson created!');
     }
 
     public function edit(Lesson $lesson)
@@ -34,6 +44,7 @@ class LessonController extends Controller
         $lesson->update($request->validate([
             'title' => 'required',
             'content' => 'nullable',
+            'video_url' => 'nullable|url',
         ]));
 
         return redirect()->route('courses.show', $lesson->course_id)->with('success', 'Lesson updated.');

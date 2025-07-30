@@ -36,22 +36,7 @@
 
         @if (auth()->user()->role === 'instructor')
             <hr class="my-6">
-            <h4 class="text-md font-bold">Add a Lesson</h4>
-            <form action="{{ route('lessons.store', $course) }}" method="POST" class="space-y-4">
-                @csrf
-
-                <div>
-                    <label>Lesson Title</label>
-                    <input name="title" class="form-control w-full" required>
-                </div>
-
-                <div>
-                    <label>Lesson Content</label>
-                    <textarea name="content" class="form-control w-full"></textarea>
-                </div>
-
-                <button class="btn btn-success">Add Lesson</button>
-            </form>
+            <a href="{{ route('lessons.create', $course) }}" class="btn btn-success mt-4 inline-block">➕ Add New Lesson</a>
         @endif
 
         @if (auth()->user()->role === 'student')

@@ -22,5 +22,6 @@ class Lesson extends Model
         'course_id',
         'title',
         'content',
+        'video_url',
     ];
 }

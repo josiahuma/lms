@@ -17,6 +17,10 @@
                 <label>Lesson Content</label>
                 <textarea name="content" class="form-control w-full">{{ $lesson->content }}</textarea>
             </div>
+            <div class="mb-4">
+                <label class="block font-semibold">Video URL (YouTube or Vimeo)</label>
+                <input type="url" name="video_url" class="form-control w-full" value="{{ $lesson->video_url }}">
+            </div>
 
             <button class="btn btn-success">Update Lesson</button>
         </form>

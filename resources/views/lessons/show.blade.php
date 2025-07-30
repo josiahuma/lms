@@ -4,11 +4,32 @@
     </x-slot>
 
     <div class="py-6 px-4 space-y-4">
-        {{-- Video --}}
         @if ($lesson->video_url)
-            <div class="aspect-w-16 aspect-h-9">
-                <iframe src="{{ $lesson->video_url }}" frameborder="0" allowfullscreen class="w-full h-64"></iframe>
-            </div>
+            @php
+                $videoUrl = $lesson->video_url;
+                $embedUrl = null;
+
+                if (str_contains($videoUrl, 'youtube.com') || str_contains($videoUrl, 'youtu.be')) {
+                    preg_match('/(youtu\.be\/|v=)([a-zA-Z0-9_-]+)/', $videoUrl, $matches);
+                    $videoId = $matches[2] ?? null;
+                    $embedUrl = $videoId ? "https://www.youtube.com/embed/{$videoId}" : null;
+                } elseif (str_contains($videoUrl, 'vimeo.com')) {
+                    preg_match('/vimeo\.com\/(\d+)/', $videoUrl, $matches);
+                    $videoId = $matches[1] ?? null;
+                    $embedUrl = $videoId ? "https://player.vimeo.com/video/{$videoId}" : null;
+                }
+            @endphp
+
+            @if ($embedUrl)
+                <div class="aspect-w-16 aspect-h-9 mb-4">
+                    <iframe
+                        src="{{ $embedUrl }}"
+                        frameborder="0"
+                        allowfullscreen
+                        class="w-full h-64 rounded shadow">
+                    </iframe>
+                </div>
+            @endif
         @endif
 
         {{-- Text Content --}}

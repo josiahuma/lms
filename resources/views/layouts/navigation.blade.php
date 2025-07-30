@@ -35,7 +35,7 @@
 
                         {{-- Student --}}
                         @if (auth()->user()->role === 'student')
-                            <x-nav-link href="{{ url('/') }}" :active="request()->routeIs('welcome')">
+                            <x-nav-link href="{{ route('courses.index') }}" :active="request()->routeIs('courses.index')">
                                 Home
                             </x-nav-link>
                              <x-nav-link href="{{ route('student.dashboard') }}" :active="request()->routeIs('student.dashboard')">

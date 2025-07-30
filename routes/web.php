@@ -39,6 +39,7 @@ Route::middleware('auth')->group(function () {
     // Course & Lesson Management
     Route::resource('courses', CourseController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
     Route::resource('lessons', LessonController::class)->only(['edit', 'update', 'destroy']);
+    Route::get('/courses/{course}/lessons/create', [LessonController::class, 'create'])->name('lessons.create');
     Route::post('/courses/{course}/lessons', [LessonController::class, 'store'])->name('lessons.store');
     Route::post('/courses/{course}/enroll', [EnrollmentController::class, 'store'])->name('courses.enroll');
     Route::get('/my-courses', [StudentController::class, 'myCourses'])->name('student.courses');
