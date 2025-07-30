@@ -9,6 +9,8 @@ use App\Models\QuizQuestion;
 use App\Models\QuizAnswer;
 use App\Models\QuizSubmission;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
+
 
 class QuizController extends Controller
 {
@@ -98,6 +100,10 @@ class QuizController extends Controller
     // Paginated Quiz Flow
     public function takePaginated(Request $request, Lesson $lesson)
     {
+        if ($request->query('q') == 0) {
+            session()->forget("quiz.{$lesson->id}.answers"); // clear old answers
+        }
+
         $quiz = $lesson->quiz()->with('questions.answers')->firstOrFail();
         $index = (int) $request->query('q', 0);
         $question = $quiz->questions[$index] ?? null;
@@ -115,6 +121,7 @@ class QuizController extends Controller
         ]);
     }
 
+
     public function storePaginatedAnswer(Request $request, Lesson $lesson)
     {
         $index = (int) $request->input('index');
@@ -131,14 +138,17 @@ class QuizController extends Controller
         $answers = session("quiz.{$lesson->id}.answers", []);
 
         $score = 0;
-        foreach ($quiz->questions as $i => $question) {
-            $correct = $question->answers->firstWhere('is_correct', true);
-            if (isset($answers[$i]) && $answers[$i] == $correct->id) {
+
+        foreach ($quiz->questions as $index => $question) {
+            $correctAnswer = $question->answers->firstWhere('is_correct', true);
+            $submittedAnswerId = $answers[$index] ?? null;
+
+            if ($submittedAnswerId && $submittedAnswerId == $correctAnswer->id) {
                 $score++;
             }
         }
 
-        $percentage = ($score / $quiz->questions->count()) * 100;
+        $percentage = ($score / max(1, $quiz->questions->count())) * 100;
 
         QuizSubmission::create([
             'user_id' => auth()->id(),
@@ -146,10 +156,17 @@ class QuizController extends Controller
             'score' => $score,
         ]);
 
+        // ✅ MARK LESSON AS COMPLETED
+        $user = auth()->user();
+        if ($percentage >= 80) {
+            $user->completedLessons()->syncWithoutDetaching([$lesson->id]);
+        }
+
         session()->forget("quiz.{$lesson->id}");
 
         return view('quizzes.result', compact('lesson', 'score', 'percentage'));
     }
+
 
     public function result(Lesson $lesson)
     {
@@ -189,5 +206,53 @@ class QuizController extends Controller
         $question = $quiz->questions[$questionIndex];
 
         return view('quizzes.take-paginated', compact('lesson', 'question', 'questionIndex'));
+    }
+
+     public function dashboard()
+    {
+        $user = Auth::user();
+
+        $enrollments = $user->enrollments()->with('course.lessons.quiz')->get();
+        $completions = LessonCompletion::where('user_id', $user->id)->pluck('lesson_id')->toArray();
+
+        // Highest scores for each quiz
+        $submissions = QuizSubmission::where('user_id', $user->id)
+            ->select(DB::raw('MAX(score) as score, quiz_id'))
+            ->groupBy('quiz_id')
+            ->get()
+            ->keyBy('quiz_id');
+
+        // Prepare progress and certificate eligibility
+        $progress = [];
+        foreach ($enrollments as $enrollment) {
+            $course = $enrollment->course;
+            $total = $course->lessons->count();
+            $completed = collect($course->lessons)->whereIn('id', $completions)->count();
+            $percentage = $total > 0 ? round(($completed / $total) * 100) : 0;
+
+            // Check if all lessons are completed and each quiz score is 80%+
+            $allCompleted = $completed === $total;
+            $allPassed = true;
+
+            foreach ($course->lessons as $lesson) {
+                if ($lesson->quiz) {
+                    $quiz = $lesson->quiz;
+                    $maxScore = $quiz->questions->count();
+                    $userScore = $submissions[$quiz->id]->score ?? 0;
+                    if ($maxScore == 0 || ($userScore / $maxScore) < 0.8) {
+                        $allPassed = false;
+                    }
+                }
+            }
+
+            $progress[$course->id] = [
+                'completed' => $completed,
+                'total' => $total,
+                'percentage' => $percentage,
+                'eligibleForCertificate' => $allCompleted && $allPassed,
+            ];
+        }
+
+        return view('student.dashboard', compact('enrollments', 'completions', 'submissions', 'progress'));
     }
 }

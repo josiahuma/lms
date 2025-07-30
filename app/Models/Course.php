@@ -30,6 +30,11 @@ class Course extends Model
         return $this->belongsToMany(User::class, 'enrollments');
     }
 
+    public function enrollments()
+    {
+        return $this->hasMany(\App\Models\Enrollment::class);
+    }
+
 
 
 

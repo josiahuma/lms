@@ -58,8 +58,15 @@ class User extends Authenticatable
 
     public function completedLessons()
     {
-        return $this->belongsToMany(\App\Models\Lesson::class, 'lesson_user');
+        return $this->belongsToMany(\App\Models\Lesson::class, 'lesson_completions')
+                    ->withTimestamps();
     }
+
+    public function enrollments()
+    {
+        return $this->hasMany(\App\Models\Enrollment::class);
+    }
+
 
 
 

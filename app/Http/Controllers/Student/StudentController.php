@@ -12,4 +12,5 @@ class StudentController extends Controller
         $courses = Auth::user()->enrolledCourses()->with('instructor')->get();
         return view('student.my-courses', compact('courses'));
     }
+
 }

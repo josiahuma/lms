@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Instructor\InstructorController;
+use App\Http\Controllers\Student\StudentDashboardController;
 use App\Http\Controllers\QuizQuestionController;
 use App\Http\Controllers\LessonCompletionController;
 use App\Http\Controllers\Student\StudentController;
@@ -62,6 +63,16 @@ Route::middleware('auth')->group(function () {
 
     // ✅ Quiz Result Page
     Route::get('/lessons/{lesson}/quiz/result', [QuizController::class, 'result'])->name('lessons.quiz.result');
+
+    // Student Dashboard
+    Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
+
+    // Certificate Download
+    Route::get('/certificate/{course}', [\App\Http\Controllers\CertificateController::class, 'download'])
+    ->middleware('auth')
+    ->name('certificate.download');
+
+
 
 });
 
