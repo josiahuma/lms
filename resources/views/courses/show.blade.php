@@ -19,10 +19,14 @@
             <h2 class="text-xl font-semibold mb-2">Course Content</h2>
             <div class="bg-white shadow rounded divide-y">
                 @forelse ($course->lessons as $lesson)
-                    <div class="p-4 flex justify-between items-center">
-                        <a href="{{ route('lessons.show', $lesson) }}" class="text-indigo-600 font-medium hover:underline">
-                            {{ $lesson->title }}
-                        </a>
+                    <div class="p-4 flex justify-between items-center @if(auth()->user()->role === 'student' && !$isEnrolled) opacity-50 cursor-not-allowed @endif">
+                        @if(auth()->user()->role === 'student' && !$isEnrolled)
+                            <span class="text-gray-500">{{ $lesson->title }}</span>
+                        @else
+                            <a href="{{ route('lessons.show', $lesson) }}" class="text-indigo-600 font-medium hover:underline">
+                                {{ $lesson->title }}
+                            </a>
+                        @endif
 
                         @if (auth()->user()->role === 'instructor')
                             <div class="flex gap-3">
@@ -39,6 +43,13 @@
                     <div class="p-4 text-gray-500">No lessons available yet.</div>
                 @endforelse
             </div>
+
+            @if(auth()->user()->role === 'student' && !$isEnrolled)
+                <div class="mt-4 p-4 bg-yellow-100 border border-yellow-300 rounded text-yellow-800">
+                    ⚠️ You must enroll to access lesson content.
+                </div>
+            @endif
+
 
             <!-- Add Lesson Button -->
             @if (auth()->user()->role === 'instructor')

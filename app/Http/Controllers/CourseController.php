@@ -43,8 +43,16 @@ class CourseController extends Controller
 
     public function show(Course $course)
     {
-        return view('courses.show', compact('course'));
+        $user = auth()->user();
+        $isEnrolled = false;
+
+        if ($user && $user->role === 'student') {
+            $isEnrolled = $user->enrolledCourses->contains($course->id);
+        }
+
+        return view('courses.show', compact('course', 'isEnrolled'));
     }
+
 
     public function edit(Course $course)
     {
