@@ -1,28 +1,33 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2>Edit Lesson</h2>
+        <h2 class="text-xl font-bold">Edit Lesson</h2>
     </x-slot>
 
-    <div class="py-4 px-4">
-        <form method="POST" action="{{ route('lessons.update', $lesson) }}">
-            @csrf
-            @method('PUT')
+    <div class="py-6">
+        <div class="max-w-3xl mx-auto bg-white p-6 rounded shadow border">
+            <form method="POST" action="{{ route('lessons.update', $lesson) }}">
+                @csrf
+                @method('PUT')
 
-            <div class="mb-2">
-                <label>Lesson Title</label>
-                <input name="title" value="{{ $lesson->title }}" class="form-control w-full" required>
-            </div>
+                <div class="mb-4">
+                    <label class="block font-semibold mb-1">Lesson Title</label>
+                    <input type="text" name="title" value="{{ $lesson->title }}" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                </div>
 
-            <div class="mb-2">
-                <label>Lesson Content</label>
-                <textarea name="content" class="form-control w-full">{{ $lesson->content }}</textarea>
-            </div>
-            <div class="mb-4">
-                <label class="block font-semibold">Video URL (YouTube or Vimeo)</label>
-                <input type="url" name="video_url" class="form-control w-full" value="{{ $lesson->video_url }}">
-            </div>
+                <div class="mb-4">
+                    <label class="block font-semibold mb-1">Lesson Content</label>
+                    <textarea name="content" rows="4" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ $lesson->content }}</textarea>
+                </div>
 
-            <button class="btn btn-success">Update Lesson</button>
-        </form>
+                <div class="mb-4">
+                    <label class="block font-semibold mb-1">Video URL (YouTube or Vimeo)</label>
+                    <input type="url" name="video_url" value="{{ $lesson->video_url }}" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <button class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded">
+                    💾 Update Lesson
+                </button>
+            </form>
+        </div>
     </div>
 </x-app-layout>

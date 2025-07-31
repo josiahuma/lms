@@ -80,6 +80,23 @@ class CourseController extends Controller
         return view('courses.students', compact('course', 'students'));
     }
 
+    public function landing()
+    {
+        $courses = \App\Models\Course::latest()->take(6)->get(); // Fetch latest 6 courses
+        return view('home', compact('courses')); // or 'welcome' if you're using welcome.blade.php
+    }
+
+    public function search(Request $request)
+    {
+        $query = $request->input('query');
+        $courses = Course::where('title', 'like', "%{$query}%")
+            ->orWhere('description', 'like', "%{$query}%")
+            ->with('instructor')
+            ->get();
+
+        return view('courses.search_results', compact('courses', 'query'));
+    }
+
 
 
 }

@@ -3,21 +3,25 @@
         <h2 class="text-xl font-bold">Students in {{ $course->title }}</h2>
     </x-slot>
 
-    <div class="py-6 px-4">
-        @if ($students->isEmpty())
-            <p>No students have enrolled yet.</p>
-        @else
-            <ul class="list-disc ml-6 space-y-2">
-                @foreach ($students as $student)
-                    <li>
-                        {{ $student->name }} ({{ $student->email }})
-                    </li>
-                @endforeach
-            </ul>
-        @endif
+    <div class="py-6">
+        <div class="max-w-3xl mx-auto bg-white p-6 rounded shadow border">
+            @if ($students->isEmpty())
+                <p class="text-gray-600">No students have enrolled yet.</p>
+            @else
+                <ul class="space-y-2 list-disc pl-6">
+                    @foreach ($students as $student)
+                        <li class="text-gray-800">
+                            {{ $student->name }} <span class="text-sm text-gray-500">({{ $student->email }})</span>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
 
-        <div class="mt-4">
-            <a href="{{ route('dashboard') }}" class="text-blue-600 underline">← Back to Dashboard</a>
+            <div class="mt-6">
+                <a href="{{ route('instructor.dashboard') }}" class="inline-block text-blue-600 hover:underline">
+                    ← Back to Dashboard
+                </a>
+            </div>
         </div>
     </div>
 </x-app-layout>

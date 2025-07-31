@@ -1,55 +1,75 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="text-xl font-bold">{{ $course->title }}</h2>
-    </x-slot>
+    <div class="max-w-7xl mx-auto py-8 px-4 md:flex gap-8">
 
-    <div class="py-6 px-4">
-        <p><strong>Description:</strong> {{ $course->description }}</p>
-        <p><strong>Price:</strong> £{{ number_format($course->price, 2) }}</p>
-        <p><strong>Instructor:</strong> {{ $course->instructor->name }}</p>
+        <!-- Left Column: Course Details -->
+        <div class="md:w-2/3">
+            <!-- Title and Instructor -->
+            <h1 class="text-3xl font-bold mb-2">{{ $course->title }}</h1>
+            <p class="text-gray-600 mb-4">By <span class="font-medium">{{ $course->instructor->name }}</span></p>
 
-        <hr class="my-4">
+            <!-- Rating (static for now) -->
+            <div class="flex items-center text-yellow-400 mb-4">
+                ⭐⭐⭐⭐⭐ <span class="ml-2 text-sm text-gray-600">(5.0)</span>
+            </div>
 
-        <h3 class="text-lg font-bold mb-2">Lessons</h3>
-        <ul class="list-disc ml-5">
-            @forelse ($course->lessons as $lesson)
-                <li class="flex justify-between items-center">
-                    <a href="{{ route('lessons.show', $lesson) }}" class="text-blue-600 underline">
-                        {{ $lesson->title }}
+            <!-- Description -->
+            <p class="text-gray-800 leading-relaxed mb-6">{{ $course->description }}</p>
+
+            <!-- Lessons -->
+            <h2 class="text-xl font-semibold mb-2">Course Content</h2>
+            <div class="bg-white shadow rounded divide-y">
+                @forelse ($course->lessons as $lesson)
+                    <div class="p-4 flex justify-between items-center">
+                        <a href="{{ route('lessons.show', $lesson) }}" class="text-indigo-600 font-medium hover:underline">
+                            {{ $lesson->title }}
+                        </a>
+
+                        @if (auth()->user()->role === 'instructor')
+                            <div class="flex gap-3">
+                                <a href="{{ route('lessons.edit', $lesson) }}" class="text-sm text-blue-600 hover:underline">✏️ Edit</a>
+                                <form action="{{ route('lessons.destroy', $lesson) }}" method="POST" onsubmit="return confirm('Delete this lesson?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-sm text-red-600 hover:underline">🗑️</button>
+                                </form>
+                            </div>
+                        @endif
+                    </div>
+                @empty
+                    <div class="p-4 text-gray-500">No lessons available yet.</div>
+                @endforelse
+            </div>
+
+            <!-- Add Lesson Button -->
+            @if (auth()->user()->role === 'instructor')
+                <div class="mt-6">
+                    <a href="{{ route('lessons.create', $course) }}" class="inline-block bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700">
+                        ➕ Add New Lesson
                     </a>
-                    @if (auth()->user()->role === 'instructor')
-                        <div class="flex gap-2 items-center">
-                            <a href="{{ route('lessons.edit', $lesson) }}" class="text-blue-600 text-sm underline">✏️ Edit</a>
+                </div>
+            @endif
+        </div>
 
-                            <form action="{{ route('lessons.destroy', $lesson) }}" method="POST" onsubmit="return confirm('Delete this lesson?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-600 text-sm underline">🗑️ Delete</button>
-                            </form>
-                        </div>
-                    @endif
-                </li>
-            @empty
-                <li>No lessons available yet.</li>
-            @endforelse
-        </ul>
+        <!-- Right Column: Sidebar -->
+        <div class="md:w-1/3 mt-8 md:mt-0">
+            <div class="bg-white shadow rounded p-6 sticky top-20">
+                <h3 class="text-xl font-semibold mb-4">Course Info</h3>
+                <p class="text-gray-700 mb-2"><strong>Price:</strong> £{{ number_format($course->price, 2) }}</p>
+                <p class="text-gray-700 mb-6"><strong>Instructor:</strong> {{ $course->instructor->name }}</p>
 
-        @if (auth()->user()->role === 'instructor')
-            <hr class="my-6">
-            <a href="{{ route('lessons.create', $course) }}" class="btn btn-success mt-4 inline-block">➕ Add New Lesson</a>
-        @endif
-
-        @if (auth()->user()->role === 'student')
-            <form action="{{ route('courses.enroll', $course) }}" method="POST" class="mt-6">
-                @csrf
-
-                @if (auth()->user()->enrolledCourses->contains($course->id))
-                    <p class="text-green-600">✅ You are already enrolled in this course.</p>
-                @else
-                    <button type="submit" class="btn btn-primary">Enroll in this Course</button>
+                @if (auth()->user()->role === 'student')
+                    <form action="{{ route('courses.enroll', $course) }}" method="POST">
+                        @csrf
+                        @if (auth()->user()->enrolledCourses->contains($course->id))
+                            <p class="text-green-600 font-medium">✅ You're already enrolled.</p>
+                        @else
+                            <button type="submit" class="w-full bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                                Enroll in this Course
+                            </button>
+                        @endif
+                    </form>
                 @endif
-            </form>
-        @endif
-
+            </div>
+        </div>
     </div>
 </x-app-layout>

@@ -3,26 +3,30 @@
         <h2 class="text-xl font-bold">Add New Lesson</h2>
     </x-slot>
 
-    <div class="py-6 px-4 max-w-3xl mx-auto">
-        <form action="{{ route('lessons.store', $course) }}" method="POST">
-            @csrf
+    <div class="py-6">
+        <div class="max-w-3xl mx-auto bg-white p-6 rounded shadow border">
+            <form action="{{ route('lessons.store', $course) }}" method="POST">
+                @csrf
 
-            <div class="mb-4">
-                <label class="block font-semibold">Lesson Title</label>
-                <input type="text" name="title" class="form-control w-full" required>
-            </div>
+                <div class="mb-4">
+                    <label class="block font-semibold mb-1">Lesson Title</label>
+                    <input type="text" name="title" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                </div>
 
-            <div class="mb-4">
-                <label class="block font-semibold">Lesson Content</label>
-                <textarea name="content" class="form-control w-full" rows="4"></textarea>
-            </div>
+                <div class="mb-4">
+                    <label class="block font-semibold mb-1">Lesson Content</label>
+                    <textarea name="content" rows="4" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
 
-            <div class="mb-4">
-                <label class="block font-semibold">Video URL (YouTube or Vimeo)</label>
-                <input type="url" name="video_url" class="form-control w-full" placeholder="https://youtube.com/... or https://vimeo.com/...">
-            </div>
+                <div class="mb-4">
+                    <label class="block font-semibold mb-1">Video URL (YouTube or Vimeo)</label>
+                    <input type="url" name="video_url" placeholder="https://youtube.com/... or https://vimeo.com/..." class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
 
-            <button type="submit" class="btn btn-primary">Create Lesson</button>
-        </form>
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded">
+                    ➕ Create Lesson
+                </button>
+            </form>
+        </div>
     </div>
 </x-app-layout>
