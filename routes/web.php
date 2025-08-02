@@ -58,6 +58,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/courses/{course}/students', [CourseController::class, 'students'])->name('courses.students');
     Route::get('/lessons/{lesson}', [LessonController::class, 'show'])->name('lessons.show');
     Route::post('/lessons/{lesson}/complete', [LessonCompletionController::class, 'store'])->name('lessons.complete');
+    Route::get('/courses/{course}/reviews/{review}/edit', [CourseReviewController::class, 'edit'])->name('courses.reviews.edit');
+    Route::put('/courses/{course}/reviews/{review}', [CourseReviewController::class, 'update'])->name('courses.reviews.update');
+    Route::delete('/courses/{course}/reviews/{review}', [CourseReviewController::class, 'destroy'])->name('courses.reviews.destroy');
+
 
     // Quiz Management (Create/Edit/Delete)
     Route::get('/lessons/{lesson}/quiz/create', [QuizController::class, 'create'])->name('quizzes.create');

@@ -89,7 +89,12 @@
                         @csrf
                         <div class="mb-2">
                             <label>Rating (1-5)</label>
-                            <input type="number" name="rating" min="1" max="5" class="border rounded px-2 py-1 w-20" required>
+                            <select name="rating" class="border rounded px-2 py-1 w-32" required>
+                                <option value="">Select rating</option>
+                                @for ($i = 1; $i <= 5; $i++)
+                                    <option value="{{ $i }}">{{ $i }} Star{{ $i > 1 ? 's' : '' }}</option>
+                                @endfor
+                            </select>
                         </div>
                         <div class="mb-2">
                             <label>Your Review</label>
@@ -107,6 +112,17 @@
                         <p class="font-semibold">{{ $review->user->name }}</p>
                         <p class="text-yellow-500">Rating: {{ str_repeat('⭐', $review->rating) }}</p>
                         <p class="text-gray-700">{{ $review->review }}</p>
+
+                         @if(auth()->id() === $review->user_id)
+                            <div class="flex gap-2 mt-1">
+                                <a href="{{ route('courses.reviews.edit', [$course, $review]) }}" class="text-blue-500 text-sm">Edit</a>
+                                <form action="{{ route('courses.reviews.destroy', [$course, $review]) }}" method="POST" onsubmit="return confirm('Delete review?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="text-red-500 text-sm">Delete</button>
+                                </form>
+                            </div>
+                        @endif
                     </div>
                 @empty
                     <p class="text-gray-500">No reviews yet.</p>
