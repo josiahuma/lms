@@ -39,6 +39,14 @@
                         <option value="advanced">Advanced</option>
                     </select>
                 </div>
+                {{-- Duration --}}
+                <div class="mb-4">
+                    <label for="duration" class="block font-semibold mb-1">Course Duration (e.g. 3h 20m or 4 weeks)</label>
+                    <input type="text" name="duration" id="duration" class="w-full border rounded px-3 py-2">
+                </div>
+
+                {{-- Category --}}
+
 
                 {{-- Price --}}
                 <div class="mb-4">

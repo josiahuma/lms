@@ -3,14 +3,36 @@
 
         <!-- Left Column: Course Details -->
         <div class="md:w-2/3">
-            <!-- Title and Instructor -->
-            <h1 class="text-3xl font-bold mb-2">{{ $course->title }}</h1>
-            <p class="text-gray-600 mb-4">By <span class="font-medium">{{ $course->instructor->name }}</span></p>
-
-            <!-- Rating (static for now) -->
-            <div class="flex items-center text-yellow-400 mb-4">
-                ⭐⭐⭐⭐⭐ <span class="ml-2 text-sm text-gray-600">(5.0)</span>
+            <!-- Banner Image -->
+            <div class="h-64 w-full rounded-lg overflow-hidden mb-6">
+                <img src="{{ $course->featured_image ? Storage::url($course->featured_image) : asset('images/default-course.jpg') }}"
+                    alt="Course Banner"
+                    class="w-full h-full object-cover">
             </div>
+
+            <!-- Title, Instructor and Tags -->
+            <div class="mb-4">
+                <h1 class="text-3xl font-bold">{{ $course->title }}</h1>
+                @if($course->reviews->count())
+                    <span class="text-yellow-500 text-sm">⭐ {{ $course->averageRating() }}/5</span>
+                @else
+                    <p class="text-gray-500">No reviews yet.</p>
+                @endif
+                <p class="text-gray-600">By <span class="font-medium">{{ $course->instructor->name }}</span></p>
+
+                <!-- Difficulty Badge -->
+                <span class="inline-block mt-2 px-3 py-1 text-sm rounded-full text-white
+                    @if($course->difficulty === 'beginner') bg-green-500
+                    @elseif($course->difficulty === 'intermediate') bg-yellow-500
+                    @else bg-red-500 @endif">
+                    {{ ucfirst($course->difficulty) }}
+                </span>
+            </div>
+            @if($course->duration)
+                <p class="text-gray-700 mb-2"><strong>Duration:</strong> {{ $course->duration }}</p>
+            @endif
+
+            <p class="text-sm text-gray-500">📅 Last Updated: {{ $course->updated_at->format('M d, Y') }}</p>
 
             <!-- Description -->
             <p class="text-gray-800 leading-relaxed mb-6">{{ $course->description }}</p>
@@ -58,6 +80,54 @@
                     ⚠️ You must enroll to access lesson content.
                 </div>
             @endif
+
+            <!-- Reviews Section -->
+            @if(auth()->check() && auth()->user()->role === 'student' && $isEnrolled)
+                <div class="mt-8">
+                    <h3 class="text-xl font-semibold mb-2">Leave a Review</h3>
+                    <form action="{{ route('courses.reviews.store', $course) }}" method="POST">
+                        @csrf
+                        <div class="mb-2">
+                            <label>Rating (1-5)</label>
+                            <input type="number" name="rating" min="1" max="5" class="border rounded px-2 py-1 w-20" required>
+                        </div>
+                        <div class="mb-2">
+                            <label>Your Review</label>
+                            <textarea name="review" rows="3" class="w-full border rounded px-2 py-1"></textarea>
+                        </div>
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Submit</button>
+                    </form>
+                </div>
+            @endif
+            <!-- Display Reviews -->
+             <div class="mt-6">
+                <h3 class="text-xl font-semibold mb-3">Student Reviews</h3>
+                @forelse($course->reviews as $review)
+                    <div class="mb-4 border-b pb-2">
+                        <p class="font-semibold">{{ $review->user->name }}</p>
+                        <p class="text-yellow-500">Rating: {{ str_repeat('⭐', $review->rating) }}</p>
+                        <p class="text-gray-700">{{ $review->review }}</p>
+                    </div>
+                @empty
+                    <p class="text-gray-500">No reviews yet.</p>
+                @endforelse
+            </div>
+
+
+            <!-- Share Buttons -->
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold mb-2">📤 Share this course</h3>
+                <div class="flex gap-3">
+                    @php $url = urlencode(request()->fullUrl()); @endphp
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ $url }}" target="_blank"
+                    class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Facebook</a>
+                    <a href="https://twitter.com/intent/tweet?url={{ $url }}" target="_blank"
+                    class="bg-blue-400 text-white px-3 py-1 rounded hover:bg-blue-500">Twitter</a>
+                    <a href="https://wa.me/?text={{ $url }}" target="_blank"
+                    class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">WhatsApp</a>
+                </div>
+            </div>
+
 
             <!-- Add Lesson Button for Instructors -->
             @if(auth()->check() && auth()->user()->role === 'instructor')

@@ -7,11 +7,32 @@ use Illuminate\Http\Request;
 
 class CourseController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $courses = Course::latest()->with('instructor')->get();
+        $query = Course::with('instructor');
+
+        // Search
+        if ($request->filled('search')) {
+            $query->where('title', 'like', '%' . $request->search . '%');
+        }
+
+        // Filter by difficulty
+        if ($request->filled('difficulty')) {
+            $query->where('difficulty', $request->difficulty);
+        }
+
+        // Filter by price
+        if ($request->price === 'free') {
+            $query->where('price', 0);
+        } elseif ($request->price === 'paid') {
+            $query->where('price', '>', 0);
+        }
+
+        $courses = $query->latest()->get();
+
         return view('courses.index', compact('courses'));
     }
+
 
     public function create()
     {
@@ -34,6 +55,7 @@ class CourseController extends Controller
             'price' => 'required|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0',
             'difficulty' => 'required|string|in:beginner,intermediate,advanced',
+            'duration' => 'nullable|string|max:100',
             'featured_image' => 'nullable|image|max:5120', // 50MB max
         ]);
 
@@ -41,6 +63,7 @@ class CourseController extends Controller
             $data['featured_image'] = $request->file('featured_image')->store('courses', 'public');
         }
 
+        $data['duration'] = $request->input('duration');
         $data['user_id'] = auth()->id();
         Course::create($data);
 
@@ -73,6 +96,10 @@ class CourseController extends Controller
             'title' => 'required',
             'description' => 'nullable',
             'price' => 'required|numeric',
+            'sale_price' => 'nullable|numeric',
+            'difficulty' => 'required|string|in:beginner,intermediate,advanced',
+            'duration' => 'nullable|string|max:100',
+            'featured_image' => 'nullable|image|max:5120', // 5MB max
         ]));
 
         return redirect()->route('courses.show', $course)->with('success', 'Course updated.');

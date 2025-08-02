@@ -21,6 +21,45 @@
                 </div>
             @endif
 
+            <form method="GET" class="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <!-- Search -->
+            <div>
+                <label for="search" class="block text-sm font-medium">Search</label>
+                <input type="text" name="search" id="search" value="{{ request('search') }}"
+                    class="w-full border-gray-300 rounded px-3 py-2" placeholder="Course title">
+            </div>
+
+            <!-- Difficulty Filter -->
+            <div>
+                <label for="difficulty" class="block text-sm font-medium">Difficulty</label>
+                <select name="difficulty" id="difficulty" class="w-full border-gray-300 rounded px-3 py-2">
+                    <option value="">All</option>
+                    <option value="beginner" {{ request('difficulty') == 'beginner' ? 'selected' : '' }}>Beginner</option>
+                    <option value="intermediate" {{ request('difficulty') == 'intermediate' ? 'selected' : '' }}>Intermediate</option>
+                    <option value="advanced" {{ request('difficulty') == 'advanced' ? 'selected' : '' }}>Advanced</option>
+                </select>
+            </div>
+
+            <!-- Price Filter -->
+            <div>
+                <label for="price" class="block text-sm font-medium">Price</label>
+                <select name="price" id="price" class="w-full border-gray-300 rounded px-3 py-2">
+                    <option value="">All</option>
+                    <option value="free" {{ request('price') == 'free' ? 'selected' : '' }}>Free</option>
+                    <option value="paid" {{ request('price') == 'paid' ? 'selected' : '' }}>Paid</option>
+                </select>
+            </div>
+
+            <!-- Submit -->
+            <div>
+                <button type="submit"
+                        class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 w-full">
+                    🔍 Filter
+                </button>
+            </div>
+        </form>
+
+
             {{-- Courses Grid --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 @forelse ($courses as $course)
@@ -34,6 +73,11 @@
 
 
                         <h3 class="text-lg font-semibold">{{ $course->title }}</h3>
+                        @if($course->reviews->count())
+                            <span class="text-yellow-500 text-sm">⭐ {{ $course->averageRating() }}/5</span>
+                        @else
+                            <p class="text-gray-500">No reviews yet.</p>
+                        @endif
                         <p class="text-sm text-gray-600">Instructor: {{ $course->instructor->name }}</p>
                         @if ($course->sale_price && $course->sale_price > 0)
                             <p class="text-gray-500 line-through text-sm">

@@ -15,6 +15,7 @@ class Course extends Model
         'sale_price',
         'featured_image',
         'difficulty',
+        'duration',
     ];
 
 
@@ -37,6 +38,18 @@ class Course extends Model
     {
         return $this->hasMany(\App\Models\Enrollment::class);
     }
+
+    public function reviews()
+    {
+        return $this->hasMany(CourseReview::class);
+    }
+
+    public function averageRating()
+    {
+        return round($this->reviews()->avg('rating'), 1); // e.g., 4.3
+    }
+
+
 
 
 

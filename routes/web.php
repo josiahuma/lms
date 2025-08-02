@@ -3,6 +3,7 @@
 use App\Http\Controllers\Instructor\InstructorController;
 use App\Http\Controllers\Student\StudentDashboardController;
 use App\Http\Controllers\QuizQuestionController;
+use App\Http\Controllers\CourseReviewController;
 use App\Http\Controllers\LessonCompletionController;
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\EnrollmentController;
@@ -90,5 +91,7 @@ Route::middleware('auth')->group(function () {
 // Public Routes
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
 Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+Route::post('/courses/{course}/reviews', [CourseReviewController::class, 'store'])->name('courses.reviews.store');
+
 
 require __DIR__ . '/auth.php';

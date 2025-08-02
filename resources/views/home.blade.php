@@ -44,10 +44,11 @@
                                 <div class="p-4">
                                     <h3 class="text-lg font-semibold">{{ $course->title }}</h3>
                                     <p class="text-sm text-gray-600">By {{ $course->instructor->name }}</p>
-                                    <div class="flex items-center text-yellow-400 text-sm my-2">
-                                        ⭐⭐⭐⭐⭐
-                                        <span class="ml-2 text-gray-600">(5.0)</span>
-                                    </div>
+                                    @if($course->reviews->count())
+                                        <span class="text-yellow-500 text-sm">⭐ {{ $course->averageRating() }}/5</span>
+                                    @else
+                                        <p class="text-gray-500">No reviews yet.</p>
+                                    @endif
                                    @if ($course->sale_price && $course->sale_price > 0)
                                         <p class="text-gray-500 line-through text-sm">
                                             £{{ number_format($course->price, 2) }}
