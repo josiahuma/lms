@@ -28,15 +28,22 @@ class CourseController extends Controller
             abort(403);
         }
 
-        $data = $request->validate([
+       $data = $request->validate([
             'title' => 'required',
             'description' => 'nullable',
             'price' => 'required|numeric|min:0',
+            'sale_price' => 'nullable|numeric|min:0',
+            'difficulty' => 'required|string|in:beginner,intermediate,advanced',
+            'featured_image' => 'nullable|image|max:5120', // 50MB max
         ]);
 
-        $data['user_id'] = auth()->id();
+        if ($request->hasFile('featured_image')) {
+            $data['featured_image'] = $request->file('featured_image')->store('courses', 'public');
+        }
 
+        $data['user_id'] = auth()->id();
         Course::create($data);
+
 
         return redirect()->route('courses.index')->with('success', 'Course created!');
     }

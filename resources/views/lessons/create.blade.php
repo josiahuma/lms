@@ -15,8 +15,13 @@
 
                 <div class="mb-4">
                     <label class="block font-semibold mb-1">Lesson Content</label>
-                    <textarea name="content" rows="4" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    <textarea name="content" id="content" rows="4" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                 </div>
+                <script>
+                    document.addEventListener("DOMContentLoaded", function () {
+                        new SimpleMDE({ element: document.getElementById("content") });
+                    });
+                </script>
 
                 <div class="mb-4">
                     <label class="block font-semibold mb-1">Video URL (YouTube or Vimeo)</label>

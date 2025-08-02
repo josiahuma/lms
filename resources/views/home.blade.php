@@ -1,3 +1,4 @@
+@php use Illuminate\Support\Facades\Storage; @endphp
 <x-app-layout>
     <div class="py-12">
         <div class="max-w-7xl mx-auto px-4">
@@ -36,7 +37,10 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         @foreach ($courses as $course)
                             <div class="bg-white border rounded shadow hover:shadow-lg transition overflow-hidden">
-                                <img src="{{ $course->thumbnail_url ?? asset('images/default-course.png') }}" alt="Course Thumbnail" class="w-full h-48 object-cover rounded-t">
+                                <img src="{{ $course->featured_image ? Storage::url($course->featured_image) : asset('images/default-course.jpg') }}"
+                                    alt="Course Thumbnail"
+                                    class="w-full h-48 object-cover rounded-t">
+
                                 <div class="p-4">
                                     <h3 class="text-lg font-semibold">{{ $course->title }}</h3>
                                     <p class="text-sm text-gray-600">By {{ $course->instructor->name }}</p>
@@ -44,7 +48,20 @@
                                         ⭐⭐⭐⭐⭐
                                         <span class="ml-2 text-gray-600">(5.0)</span>
                                     </div>
-                                    <p class="text-indigo-600 font-bold">£{{ number_format($course->price, 2) }}</p>
+                                   @if ($course->sale_price && $course->sale_price > 0)
+                                        <p class="text-gray-500 line-through text-sm">
+                                            £{{ number_format($course->price, 2) }}
+                                        </p>
+                                        <p class="text-indigo-600 font-bold text-lg">
+                                            £{{ number_format($course->sale_price, 2) }}
+                                        </p>
+                                    @elseif ($course->price > 0)
+                                        <p class="text-indigo-600 font-bold text-lg">
+                                            £{{ number_format($course->price, 2) }}
+                                        </p>
+                                    @else
+                                        <p class="text-green-600 font-bold text-lg">FREE</p>
+                                    @endif
                                     <a href="{{ route('courses.show', $course) }}" class="mt-4 inline-block text-indigo-600 hover:underline">
                                         View Course
                                     </a>

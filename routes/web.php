@@ -31,6 +31,8 @@ Route::get('/admin/dashboard', function () {
     }
 })->middleware('auth');
 
+
+
 // Protected Routes
 Route::middleware('auth')->group(function () {
 
@@ -41,7 +43,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Course & Lesson Management
-    Route::resource('courses', CourseController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
+    Route::get('/courses/create', [CourseController::class, 'create'])->name('courses.create');
+    Route::post('/courses', [CourseController::class, 'store'])->name('courses.store');
+    Route::get('/courses/{course}/edit', [CourseController::class, 'edit'])->name('courses.edit');
+    Route::put('/courses/{course}', [CourseController::class, 'update'])->name('courses.update');
+    Route::delete('/courses/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
     Route::resource('lessons', LessonController::class)->only(['edit', 'update', 'destroy']);
     Route::get('/courses/{course}/lessons/create', [LessonController::class, 'create'])->name('lessons.create');
     Route::post('/courses/{course}/lessons', [LessonController::class, 'store'])->name('lessons.store');
@@ -80,5 +86,9 @@ Route::middleware('auth')->group(function () {
 
 
 });
+
+// Public Routes
+Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
+Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
 
 require __DIR__ . '/auth.php';

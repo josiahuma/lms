@@ -15,7 +15,21 @@
                                 {{ $course->title }}
                             </a><br>
                             <small class="text-gray-600">Instructor: {{ $course->instructor->name }}</small><br>
-                            <span class="text-gray-800 font-medium">Price: £{{ number_format($course->price, 2) }}</span>
+                            @if ($course->sale_price && $course->sale_price > 0)
+                                <p class="text-gray-500 line-through text-sm">
+                                    £{{ number_format($course->price, 2) }}
+                                </p>
+                                <p class="text-indigo-600 font-bold text-lg">
+                                    £{{ number_format($course->sale_price, 2) }}
+                                </p>
+                            @elseif ($course->price > 0)
+                                <p class="text-indigo-600 font-bold text-lg">
+                                    £{{ number_format($course->price, 2) }}
+                                </p>
+                            @else
+                                <p class="text-green-600 font-bold text-lg">FREE</p>
+                            @endif
+
                         </li>
                     @endforeach
                 </ul>

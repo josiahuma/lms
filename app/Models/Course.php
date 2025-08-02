@@ -12,6 +12,9 @@ class Course extends Model
         'title',
         'description',
         'price',
+        'sale_price',
+        'featured_image',
+        'difficulty',
     ];
 
 
