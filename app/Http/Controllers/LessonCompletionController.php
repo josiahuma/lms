@@ -2,19 +2,43 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Lesson;
+use App\Models\LessonCompletion;
+use Illuminate\Support\Facades\Auth;
 
 class LessonCompletionController extends Controller
 {
-    //
-    public function store(Request $request, Lesson $lesson)
+    public function store(Lesson $lesson)
     {
-        $user = auth()->user();
+        LessonCompletion::firstOrCreate([
+            'user_id' => Auth::id(),
+            'lesson_id' => $lesson->id,
+        ]);
 
-        // Attach the lesson to the user's completed list (using a pivot)
-        $user->completedLessons()->syncWithoutDetaching([$lesson->id]);
+        // Redirect to quiz if it exists
+        if ($lesson->quiz) {
+            return redirect()->route('lessons.quiz.paginated', ['lesson' => $lesson->id, 'question' => 0]);
+        }
 
-        return redirect()->back()->with('success', 'Lesson marked as completed!');
+        // Check if order is not null before comparison
+        $nextLesson = null;
+
+        if (!is_null($lesson->order)) {
+            $nextLesson = Lesson::where('course_id', $lesson->course_id)
+                ->where('order', '>', $lesson->order)
+                ->orderBy('order')
+                ->first();
+        }
+
+        if ($nextLesson) {
+            return redirect()->route('lessons.show', $nextLesson->id)
+                ->with('success', 'Lesson completed. Proceed to next.');
+        }
+
+        // If no next lesson, go to student dashboard
+        return redirect()->route('student.dashboard')
+            ->with('success', 'Course completed. You can now download your certificate.');
     }
+
+
 }

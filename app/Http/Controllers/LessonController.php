@@ -58,9 +58,19 @@ class LessonController extends Controller
 
     public function show(Lesson $lesson)
     {
-        $lesson->load('quiz');
-        return view('lessons.show', compact('lesson'));
+        $nextLesson = null;
+
+        if (!is_null($lesson->order)) {
+            $nextLesson = Lesson::where('course_id', $lesson->course_id)
+                ->where('order', '>', $lesson->order)
+                ->orderBy('order')
+                ->first();
+        }
+
+        return view('lessons.show', compact('lesson', 'nextLesson'));
     }
+
+
 
     public function quiz(Lesson $lesson)
     {

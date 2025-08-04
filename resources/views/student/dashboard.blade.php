@@ -36,7 +36,9 @@
                                 <li class="border-b pb-2">
                                     <div class="flex justify-between items-center">
                                         <div>
-                                            <span class="font-medium">{{ $lesson->title }}</span>
+                                            <a href="{{ route('lessons.show', $lesson) }}" class="text-blue-600 hover:underline">
+                                                <span class="font-medium">{{ $lesson->title }}</span>
+                                            </a>
                                             @if(in_array($lesson->id, $completions))
                                                 <span class="text-green-600 text-sm ml-2">✅ Completed</span>
                                             @endif
@@ -47,14 +49,15 @@
                                                 @php
                                                     $quiz = $lesson->quiz;
                                                     $submission = $submissions[$quiz->id] ?? null;
-                                                    $score = $submission ? $submission->score : null;
+                                                    $correct = $submission ? $submission->correct_answers : null;
                                                     $total = $quiz->questions->count();
-                                                    $passed = $score !== null && $total > 0 && ($score / $total) * 100 >= 80;
+                                                    $passed = $correct !== null && $total > 0 && ($correct / $total) * 100 >= 80;
                                                 @endphp
 
                                                 <span class="text-blue-600">
-                                                    🧠 Score: {{ $score ?? 'N/A' }}/{{ $total }}
+                                                    🧠 Score: {{ $correct !== null ? $correct . '/' . $total : 'N/A' }}
                                                 </span>
+
 
                                                 @if($passed)
                                                     <a href="{{ route('lessons.quiz.paginated', $lesson) }}" class="text-green-700 font-semibold">✅ Retake</a>
@@ -67,13 +70,12 @@
                                 </li>
                             @endforeach
                         </ul>
-
-                        @if($passed)
-                            <div class="mt-4 text-center">
-                                <a href="{{ route('certificate.download', $course->id) }}" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded shadow">
-                                    🎓 Download Certificate
-                                </a>
-                            </div>
+                        @if($progress[$course->id]['eligibleForCertificate'])
+                                <a href="{{ route('certificate.download', $course->id) }}"  class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded shadow">🎓 Download Certificate</a>
+                        @else
+                            <button class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded shadow" disabled title="Complete all lessons and quizzes with 80%+ to download">
+                                🔒 Certificate Locked
+                            </button>
                         @endif
                     </div>
                 @endif

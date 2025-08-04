@@ -13,24 +13,32 @@ class CertificateController extends Controller
         $user = Auth::user();
         $course = Course::with('lessons.quiz.questions')->findOrFail($courseId);
 
-        // Check if user is eligible
+        // Check lesson completion
         $totalLessons = $course->lessons->count();
-        $completedLessons = $user->completedLessons()->whereIn('lessons.id', $course->lessons->pluck('id'))->count();
+        $completedLessons = $user->completedLessons()
+            ->whereIn('lessons.id', $course->lessons->pluck('id'))
+            ->count();
 
+        // Check quiz scores
         $allPassed = true;
         foreach ($course->lessons as $lesson) {
             if ($lesson->quiz) {
-                $maxScore = $lesson->quiz->questions->count();
-                $submission = $lesson->quiz->submissions()->where('user_id', $user->id)->latest()->first();
-                $userScore = $submission->score ?? 0;
+                $submission = $lesson->quiz->submissions()
+                    ->where('user_id', $user->id)
+                    ->latest()
+                    ->first();
 
-                if ($maxScore == 0 || ($userScore / $maxScore) < 0.8) {
+                $score = $submission->score ?? 0;
+
+                // ❗ No need to divide — score is already percentage
+                if ($score < 80) {
                     $allPassed = false;
                     break;
                 }
             }
         }
 
+        // Final check
         if ($totalLessons === 0 || $completedLessons < $totalLessons || !$allPassed) {
             return redirect()->back()->with('error', 'You are not yet eligible for a certificate.');
         }
@@ -38,4 +46,5 @@ class CertificateController extends Controller
         $pdf = Pdf::loadView('certificates.certificate', compact('user', 'course'));
         return $pdf->download("certificate-{$course->id}.pdf");
     }
+
 }

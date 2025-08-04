@@ -2,257 +2,153 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Lesson;
-use App\Models\Quiz;
-use App\Models\QuizQuestion;
-use App\Models\QuizAnswer;
 use App\Models\QuizSubmission;
-use Illuminate\Support\Facades\Session;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
 
 class QuizController extends Controller
 {
-    public function create(Lesson $lesson)
-    {
-        return view('quizzes.create', compact('lesson'));
-    }
-
     public function store(Request $request, Lesson $lesson)
     {
         $request->validate([
-            'questions.*.question' => 'required|string',
-            'questions.*.answers.*.answer_text' => 'required|string',
-            'questions.*.correct_answer' => 'required|integer'
+            'answers' => 'required|array',
         ]);
 
-        $quiz = Quiz::create(['lesson_id' => $lesson->id]);
+        $correct = 0;
+        $total = $lesson->quiz->questions->count();
 
-        foreach ($request->input('questions') as $questionData) {
-            $question = $quiz->questions()->create(['question' => $questionData['question']]);
-
-            foreach ($questionData['answers'] as $index => $answerData) {
-                $question->answers()->create([
-                    'answer_text' => $answerData['answer_text'],
-                    'is_correct' => ($index == $questionData['correct_answer']),
-                ]);
+        foreach ($lesson->quiz->questions as $question) {
+            $answerId = $request->answers[$question->id] ?? null;
+            if ($answerId && $question->correctAnswer && $answerId == $question->correctAnswer->id) {
+                $correct++;
             }
         }
 
-        return redirect()->route('lessons.show', $lesson)->with('success', 'Quiz created successfully!');
-    }
+        $score = ($total > 0) ? ($correct / $total) * 100 : 0;
 
-    public function edit(Quiz $quiz)
-    {
-        $quiz->load('lesson', 'questions.answers');
-        return view('quizzes.edit', compact('quiz'));
-    }
-
-    public function update(Request $request, Quiz $quiz)
-    {
-        $request->validate([
-            'questions.*.question' => 'required|string',
-            'questions.*.answers.*.answer_text' => 'required|string',
-            'questions.*.correct_answer' => 'required|integer'
+        QuizAttempt::create([
+            'user_id' => Auth::id(),
+            'lesson_id' => $lesson->id,
+            'score' => $score,
         ]);
 
-        // Delete old questions and answers
-        foreach ($quiz->questions as $question) {
-            $question->answers()->delete();
-            $question->delete();
+        // Mark lesson as completed
+        $lesson->completions()->firstOrCreate(['user_id' => Auth::id()]);
+
+        // Find next lesson
+        $nextLesson = Lesson::where('course_id', $lesson->course_id)
+                            ->where('order', '>', $lesson->order)
+                            ->orderBy('order')
+                            ->first();
+
+        if ($nextLesson) {
+            return redirect()->route('lessons.show', $nextLesson->id)
+                ->with('success', 'Quiz submitted! Moving to next lesson.');
         }
 
-        foreach ($request->input('questions') as $questionData) {
-            $question = $quiz->questions()->create(['question' => $questionData['question']]);
-
-            foreach ($questionData['answers'] as $index => $answerData) {
-                $question->answers()->create([
-                    'answer_text' => $answerData['answer_text'],
-                    'is_correct' => ($index == $questionData['correct_answer']),
-                ]);
-            }
-        }
-
-        return redirect()->route('lessons.show', $quiz->lesson)->with('success', 'Quiz updated!');
+        return redirect()->route('student.dashboard')
+            ->with('success', 'You’ve completed the final lesson. Download your certificate!');
     }
 
-    public function destroy(Quiz $quiz)
-    {
-        $lesson = $quiz->lesson;
-
-        foreach ($quiz->questions as $question) {
-            $question->answers()->delete();
-            $question->delete();
-        }
-
-        $quiz->delete();
-
-        return redirect()->route('lessons.show', $lesson)->with('success', 'Quiz deleted.');
-    }
-
-    public function view(Quiz $quiz)
-    {
-        $quiz->load('lesson', 'questions.answers');
-        return view('quizzes.show', compact('quiz'));
-    }
-
-    // Paginated Quiz Flow
     public function takePaginated(Request $request, Lesson $lesson)
     {
-        if ($request->query('q') == 0) {
-            session()->forget("quiz.{$lesson->id}.answers"); // clear old answers
+        $quiz = $lesson->quiz;
+
+        if (!$quiz) {
+            return redirect()->route('lessons.show', $lesson->id)
+                ->with('error', 'Quiz not found for this lesson.');
         }
 
-        $quiz = $lesson->quiz()->with('questions.answers')->firstOrFail();
-        $index = (int) $request->query('q', 0);
-        $question = $quiz->questions[$index] ?? null;
+        $questionIndex = (int) $request->query('question', 0);
+        $questions = $quiz->questions;
 
-        if (!$question) {
-            return redirect()->route('lessons.quiz.paginated.submit', $lesson);
+        if (!isset($questions[$questionIndex])) {
+            return redirect()->route('lessons.show', $lesson->id)
+                ->with('error', 'Question not found.');
         }
 
-        return view('quizzes.paginated', [
+        $question = $questions[$questionIndex];
+
+        return view('quizzes.take-paginated', [
             'lesson' => $lesson,
             'quiz' => $quiz,
             'question' => $question,
-            'index' => $index,
-            'total' => $quiz->questions->count(),
+            'questionIndex' => $questionIndex,
         ]);
     }
 
-
     public function storePaginatedAnswer(Request $request, Lesson $lesson)
     {
-        $index = (int) $request->input('index');
-        $answerId = $request->input('answer_id');
+        $data = $request->validate([
+            'question_id' => 'required|exists:quiz_questions,id',
+            'selected_option' => 'required|integer',
+            'current_question' => 'required|integer',
+        ]);
 
-        session()->put("quiz.{$lesson->id}.answers.{$index}", $answerId);
+        $answers = session()->get('quiz_answers', []);
+        $answers[$data['question_id']] = $data['selected_option']; // store ID
+        session()->put('quiz_answers', $answers);
 
-        return redirect()->route('lessons.quiz.paginated', ['lesson' => $lesson, 'q' => $index + 1]);
+
+        // Get total number of questions for this lesson's quiz
+        $totalQuestions = $lesson->quiz->questions()->count();
+
+        // If last question, redirect to submit page
+        if ($data['current_question'] + 1 >= $totalQuestions) {
+            return redirect()->route('lessons.quiz.paginated.submit', ['lesson' => $lesson->id]);
+        }
+
+        // Else go to next question
+        return redirect()->route('lessons.quiz.paginated', [
+            'lesson' => $lesson->id,
+            'question' => $data['current_question'] + 1
+        ]);
     }
 
     public function submitPaginated(Lesson $lesson)
     {
-        $quiz = $lesson->quiz()->with('questions.answers')->firstOrFail();
-        $answers = session("quiz.{$lesson->id}.answers", []);
+        $answers = session()->get('quiz_answers', []);
+        $correct = 0;
 
-        $score = 0;
+        foreach ($lesson->quiz->questions as $question) {
+            $selectedAnswerId = $answers[$question->id] ?? null;
 
-        foreach ($quiz->questions as $index => $question) {
-            $correctAnswer = $question->answers->firstWhere('is_correct', true);
-            $submittedAnswerId = $answers[$index] ?? null;
-
-            if ($submittedAnswerId && $submittedAnswerId == $correctAnswer->id) {
-                $score++;
+            if ($selectedAnswerId) {
+                $selectedAnswer = $question->answers()->find($selectedAnswerId);
+                if ($selectedAnswer && $selectedAnswer->is_correct) {
+                    $correct++;
+                }
             }
         }
 
-        $percentage = ($score / max(1, $quiz->questions->count())) * 100;
+        $total = $lesson->quiz->questions->count();
+        $percentage = ($total > 0) ? ($correct / $total) * 100 : 0;
 
+        // ✅ Save quiz attempt
         QuizSubmission::create([
-            'user_id' => auth()->id(),
-            'quiz_id' => $quiz->id,
-            'score' => $score,
+            'user_id' => Auth::id(),
+            'quiz_id' => $lesson->quiz->id,
+            'score' => $percentage,
+            'correct_answers' => $correct,
         ]);
 
-        // ✅ MARK LESSON AS COMPLETED
-        $user = auth()->user();
-        if ($percentage >= 80) {
-            $user->completedLessons()->syncWithoutDetaching([$lesson->id]);
-        }
+        session()->forget('quiz_answers');
 
-        session()->forget("quiz.{$lesson->id}");
-
-        return view('quizzes.result', compact('lesson', 'score', 'percentage'));
+        return redirect()->route('lessons.quiz.result', ['lesson' => $lesson->id])
+            ->with('score', $correct)
+            ->with('percentage', $percentage);
     }
+
 
 
     public function result(Lesson $lesson)
     {
-        $quiz = $lesson->quiz;
+        $score = session('score');
+        $percentage = session('percentage');
+        $total = $lesson->quiz->questions->count();
 
-        // Optionally fetch latest submission instead
-        $submission = QuizSubmission::where('user_id', auth()->id())
-            ->where('quiz_id', $quiz->id)
-            ->latest()->first();
-
-        $score = $submission->score;
-        $total = $quiz->questions->count();
-        $percentage = ($total > 0) ? ($score / $total) * 100 : 0;
-
-        return view('quizzes.result', compact('lesson', 'score', 'total', 'percentage'));
+        return view('quizzes.result', compact('lesson', 'score', 'percentage', 'total'));
     }
 
-    public function showPaginated(Lesson $lesson, Request $request)
-    {
-        $questionIndex = (int) $request->query('question', 0);
-        $quiz = $lesson->quiz()->with('questions.answers')->firstOrFail();
-
-        if (!session()->has('quiz_answers')) {
-            session(['quiz_answers' => []]);
-        }
-
-        if ($request->isMethod('post')) {
-            $selectedAnswer = $request->input('answer');
-            $questionId = $quiz->questions[$questionIndex - 1]->id;
-            session()->put("quiz_answers.$questionId", $selectedAnswer);
-        }
-
-        if ($questionIndex >= $quiz->questions->count()) {
-            return redirect()->route('lessons.quiz.result', $lesson);
-        }
-
-        $question = $quiz->questions[$questionIndex];
-
-        return view('quizzes.take-paginated', compact('lesson', 'question', 'questionIndex'));
-    }
-
-     public function dashboard()
-    {
-        $user = Auth::user();
-
-        $enrollments = $user->enrollments()->with('course.lessons.quiz')->get();
-        $completions = LessonCompletion::where('user_id', $user->id)->pluck('lesson_id')->toArray();
-
-        // Highest scores for each quiz
-        $submissions = QuizSubmission::where('user_id', $user->id)
-            ->select(DB::raw('MAX(score) as score, quiz_id'))
-            ->groupBy('quiz_id')
-            ->get()
-            ->keyBy('quiz_id');
-
-        // Prepare progress and certificate eligibility
-        $progress = [];
-        foreach ($enrollments as $enrollment) {
-            $course = $enrollment->course;
-            $total = $course->lessons->count();
-            $completed = collect($course->lessons)->whereIn('id', $completions)->count();
-            $percentage = $total > 0 ? round(($completed / $total) * 100) : 0;
-
-            // Check if all lessons are completed and each quiz score is 80%+
-            $allCompleted = $completed === $total;
-            $allPassed = true;
-
-            foreach ($course->lessons as $lesson) {
-                if ($lesson->quiz) {
-                    $quiz = $lesson->quiz;
-                    $maxScore = $quiz->questions->count();
-                    $userScore = $submissions[$quiz->id]->score ?? 0;
-                    if ($maxScore == 0 || ($userScore / $maxScore) < 0.8) {
-                        $allPassed = false;
-                    }
-                }
-            }
-
-            $progress[$course->id] = [
-                'completed' => $completed,
-                'total' => $total,
-                'percentage' => $percentage,
-                'eligibleForCertificate' => $allCompleted && $allPassed,
-            ];
-        }
-
-        return view('student.dashboard', compact('enrollments', 'completions', 'submissions', 'progress'));
-    }
 }
