@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Instructor\InstructorController;
 use App\Http\Controllers\Student\StudentDashboardController;
+use App\Http\Controllers\Admin\HomeSettingsController;
 use App\Http\Controllers\QuizQuestionController;
 use App\Http\Controllers\CourseReviewController;
 use App\Http\Controllers\LessonCompletionController;
@@ -24,14 +25,16 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::get('/admin/dashboard', function () {
-    if (auth()->check() && auth()->user()->role === 'admin') {
-        return view('admin.dashboard');
-    } else {
-        abort(403, 'Access denied');
-    }
-})->middleware('auth');
+// Admin Routes
+// ✅ Namespaced under admin.* and prefixed with /admin
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', function () {
+            return view('admin.dashboard');
+        })->name('dashboard');
 
+    Route::get('/home-settings/edit', [HomeSettingsController::class, 'edit'])->name('home-settings.edit');
+    Route::put('/home-settings/update', [HomeSettingsController::class, 'update'])->name('home-settings.update');
+});
 
 
 // Protected Routes
@@ -87,8 +90,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/certificate/{course}', [\App\Http\Controllers\CertificateController::class, 'download'])
     ->middleware('auth')
     ->name('certificate.download');
-
-
 
 });
 

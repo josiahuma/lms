@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\SiteSetting;
 use Illuminate\Http\Request;
 
 class CourseController extends Controller
@@ -124,9 +125,23 @@ class CourseController extends Controller
 
     public function landing()
     {
-        $courses = \App\Models\Course::latest()->take(6)->get(); // Fetch latest 6 courses
-        return view('home', compact('courses')); // or 'welcome' if you're using welcome.blade.php
+        $settings = SiteSetting::first();
+
+        if ($settings && $settings->featured_course_ids) {
+            // Decode if featured_course_ids is stored as JSON
+            $ids = is_array($settings->featured_course_ids)
+                ? $settings->featured_course_ids
+                : json_decode($settings->featured_course_ids, true);
+
+            $courses = Course::whereIn('id', $ids)->get();
+        } else {
+            // Fallback: show recent 6 courses
+            $courses = Course::latest()->take(6)->get();
+        }
+
+        return view('home', compact('courses', 'settings'));
     }
+
 
     public function search(Request $request)
     {

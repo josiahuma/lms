@@ -37,7 +37,24 @@
 
             <!-- Page Content -->
             <main>
-                {{ $slot }}
+                @if(auth()->check() && auth()->user()->role === 'admin')
+                    <div class="flex">
+                        <div class="w-64 h-screen bg-gray-100 p-4">
+                            <h2 class="text-lg font-bold mb-4">Admin Panel</h2>
+                            <ul class="space-y-2">
+                                <li><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+                                <li><a href="{{ route('admin.home-settings.edit') }}">Home Settings</a></li>
+                                <li><a href="{{ route('courses.index') }}">Approve Courses</a></li>
+                                <li><a href="#">Manage Users</a></li>
+                            </ul>
+                        </div>
+                        <div class="flex-1 p-6">
+                            {{ $slot }}
+                        </div>
+                    </div>
+                    @else
+                        {{ $slot }}
+                    @endif
             </main>
         </div>
     </body>
